@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>CRUD de Productos</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    max-width: 700px;
+    margin: 40px auto;
+    padding: 0 20px;
+    color: #222;
+  }
+  h1 {
+    font-size: 22px;
+  }
+  form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  input {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  button {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 4px;
+    background: #333;
+    color: #fff;
+    cursor: pointer;
+  }
+  button.secondary {
+    background: #999;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  th, td {
+    text-align: left;
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+  }
+  .acciones button {
+    margin-right: 6px;
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+  #mensaje {
+    color: #c0392b;
+    margin-bottom: 10px;
+    font-size: 14px;
+  }
+</style>
+</head>
+<body>
+
+<h1>CRUD de Productos</h1>
+<div id="mensaje"></div>
+
+<form id="formProducto">
+  <input type="hidden" id="id">
+  <input type="text" id="nombre" placeholder="Nombre" required>
+  <input type="text" id="categoria" placeholder="Categoría" required>
+  <input type="number" id="precio" placeholder="Precio" min="0" step="0.01" required>
+  <input type="number" id="stock" placeholder="Stock" min="0" required>
+  <button type="submit" id="btnGuardar">Añadir producto</button>
+  <button type="button" class="secondary" id="btnCancelar" style="display:none">Cancelar edición</button>
+</form>
+
+<table>
+  <thead>
+    <tr>
+      <th>Nombre</th>
+      <th>Categoría</th>
+      <th>Precio</th>
+      <th>Stock</th>
+      <th>Acciones</th>
+    </tr>
+  </thead>
+  <tbody id="tablaProductos"></tbody>
+</table>
+
+<script>
+  const API_URL = "/productos";
+
+  const form = document.getElementById("formProducto");
+  const idInput = document.getElementById("id");
+  const nombreInput = document.getElementById("nombre");
+  const categoriaInput = document.getElementById("categoria");
+  const precioInput = document.getElementById("precio");
+  const stockInput = document.getElementById("stock");
+  const btnGuardar = document.getElementById("btnGuardar");
+  const btnCancelar = document.getElementById("btnCancelar");
+  const tabla = document.getElementById("tablaProductos");
+  const mensaje = document.getElementById("mensaje");
+
+  function mostrarError(texto) {
+    mensaje.textContent = texto;
+    setTimeout(() => (mensaje.textContent = ""), 4000);
+  }
+
+  async function cargarProductos() {
+    const res = await fetch(API_URL);
+    const productos = await res.json();
+    tabla.innerHTML = "";
+
+    productos.forEach((p) => {
+      const fila = document.createElement("tr");
+      fila.innerHTML = `
+        <td>${p.nombre}</td>
+        <td>${p.categoria}</td>
+        <td>$${p.precio}</td>
+        <td>${p.stock}</td>
+        <td class="acciones">
+          <button onclick="editar(${p.id})">Editar</button>
+          <button onclick="eliminar(${p.id})">Eliminar</button>
+        </td>
+      `;
+      tabla.appendChild(fila);
+    });
+  }
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const producto = {
+      nombre: nombreInput.value,
+      categoria: categoriaInput.value,
+      precio: parseFloat(precioInput.value),
+      stock: parseInt(stockInput.value, 10),
+    };
+
+    const editando = idInput.value !== "";
+    const url = editando ? `${API_URL}/${idInput.value}` : API_URL;
+    const method = editando ? "PUT" : "POST";
+
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(producto),
+    });
+
+    if (!res.ok) {
+      const error = await res.json();
+      mostrarError(error.error || "Ocurrió un error");
+      return;
+    }
+
+    resetFormulario();
+    cargarProductos();
+  });
+
+  window.editar = async function (id) {
+    const res = await fetch(`${API_URL}/${id}`);
+    const p = await res.json();
+
+    idInput.value = p.id;
+    nombreInput.value = p.nombre;
+    categoriaInput.value = p.categoria;
+    precioInput.value = p.precio;
+    stockInput.value = p.stock;
+
+    btnGuardar.textContent = "Guardar cambios";
+    btnCancelar.style.display = "inline-block";
+  };
+
+  window.eliminar = async function (id) {
+    if (!confirm("¿Eliminar este producto?")) return;
+
+    await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+    cargarProductos();
+  };
+
+  btnCancelar.addEventListener("click", resetFormulario);
+
+  function resetFormulario() {
+    form.reset();
+    idInput.value = "";
+    btnGuardar.textContent = "Añadir producto";
+    btnCancelar.style.display = "none";
+  }
+
+  cargarProductos();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,13 @@
+[ {
+  "id" : 1,
+  "nombre" : "Queso campesino",
+  "precio" : 12000.0,
+  "stock" : 25,
+  "categoria" : "Lacteos"
+}, {
+  "id" : 2,
+  "nombre" : "queso peruano ",
+  "precio" : 10.0,
+  "stock" : 1,
+  "categoria" : "mierda"
+} ]
