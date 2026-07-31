@@ -67,6 +67,9 @@ public class ProductoController {
                 return "Todos los campos son obligatorios: nombre, precio, stock, categoria";
             }
         }
+        if (producto.getNombre() != null && producto.getNombre().length() > 100) {
+            return "El nombre no puede tener mas de 100 caracteres";
+        }
         if (producto.getPrecio() < 0) {
             return "El precio no puede ser negativo";
         }
@@ -75,4 +78,5 @@ public class ProductoController {
         }
         return null;
     }
+
 }
